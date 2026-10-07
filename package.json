@@ -1,0 +1,52 @@
+{
+  "name": "pi-session-affinity",
+  "version": "0.0.0",
+  "description": "Keep one pi conversation on one inference engine: a per-session routing header for gateways that route by session, and an optional post-compaction boundary request for hybrid-attention engines.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Justin Barlow",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lobo235/pi-session-affinity.git"
+  },
+  "homepage": "https://github.com/lobo235/pi-session-affinity#readme",
+  "bugs": {
+    "url": "https://github.com/lobo235/pi-session-affinity/issues"
+  },
+  "keywords": [
+    "pi-package",
+    "pi",
+    "session-affinity",
+    "prefix-cache",
+    "coding-agent"
+  ],
+  "pi": {
+    "extensions": [
+      "./src/index.ts"
+    ]
+  },
+  "files": [
+    "src/**/*.ts",
+    "!src/**/*.test.ts",
+    "!src/test-support.ts",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "test": "npm run typecheck && node --test \"src/**/*.test.ts\" \"scripts/**/*.test.ts\" && npm run load-smoke && npm run smoke",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "load-smoke": "node load-smoke.mjs",
+    "smoke": "node scripts/wire-smoke.ts",
+    "check-pack": "node scripts/check-pack.ts"
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "1.0.4",
+    "@types/node": "24.19.0",
+    "typescript": "5.9.3"
+  }
+}
