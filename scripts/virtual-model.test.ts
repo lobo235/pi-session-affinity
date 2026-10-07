@@ -15,7 +15,9 @@ import { FAKE_MODEL, driveSession, writeAgentDir, type RpcRecord } from "./pi-rp
 
 const CONFIG = { headers: { "example-router": { "x-session-id": "{sessionId}", "x-route-tag": "configured" } }, boundary: ["example-router"] };
 
-test("a virtual model routed to another provider receives no configured header and no boundary request", { timeout: 180_000 }, async (t) => {
+const SKIP_ON_WINDOWS = process.platform === "win32" ? "starts pi's bin, a .cmd shim on Windows (see the wire smoke)" : false;
+
+test("a virtual model routed to another provider receives no configured header and no boundary request", { timeout: 180_000, skip: SKIP_ON_WINDOWS }, async (t) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "pi-session-affinity-virtual-"));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const fake = await startFakeModel(FAKE_MODEL);

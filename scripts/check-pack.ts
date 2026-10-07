@@ -3,12 +3,15 @@
  * the repository needs (tests, test support, scripts, CI, agent instructions). Exits 1 naming each problem.
  */
 import { execFileSync } from "node:child_process";
+import * as fs from "node:fs";
 import * as path from "node:path";
 
 const repo = path.join(import.meta.dirname, "..");
-const REQUIRED = ["package.json", "README.md", "LICENSE", "CHANGELOG.md",
-  "src/index.ts", "src/boundary.ts", "src/config.ts", "src/config-reader.ts", "src/headers.ts", "src/notice.ts", "src/provider-notices.ts"];
 const FORBIDDEN = [/\.test\.ts$/, /(^|\/)test-support\.ts$/, /^scripts\//, /^\.github\//, /^AGENTS\.md$/, /^CLAUDE\.md$/, /\.env/, /^load-smoke\.mjs$/, /^tsconfig\.json$/];
+// Every source module the extension can import, read from the tree so a new module cannot be forgotten here.
+const sources = fs.readdirSync(path.join(repo, "src")).filter((name) => name.endsWith(".ts")).map((name) => `src/${name}`)
+  .filter((name) => !FORBIDDEN.some((pattern) => pattern.test(name)));
+const REQUIRED = ["package.json", "README.md", "LICENSE", "CHANGELOG.md", ...sources];
 
 const packed = JSON.parse(execFileSync("npm", ["pack", "--dry-run", "--json"], { cwd: repo, encoding: "utf8", shell: process.platform === "win32" })) as
   { files: { path: string }[]; unpackedSize: number }[];

@@ -25,6 +25,7 @@ jobs:
         include:
           - os: ubuntu-latest
             node: "22.19.0"
+          # Runs, but is not required to pass: Windows is not supported yet. The wire smoke skips itself there.
           - os: windows-latest
             node: "24"
     steps:

@@ -1,8 +1,9 @@
 name: nightly-pi
 
 # Tests the extension against the newest pi on npm. The extension uses only pi's public extension events and checks
-# no pi version at run time, so this job is the guard against a pi change: a failure opens an issue (one at a
-# time). It never merges or publishes anything. The job that installs and runs the new pi has a read-only token;
+# no pi version at run time, so this job is the guard against a pi change: a failure opens an issue for that pi
+# version unless one for it is already open (a failure on a newer pi opens another). It never merges or publishes
+# anything. The job that installs and runs the new pi has a read-only token;
 # only the reporting job can write, and it installs nothing and runs no package scripts.
 
 on:

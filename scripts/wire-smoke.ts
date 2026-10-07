@@ -33,6 +33,12 @@ function describeRequest(index: number, request: WireRequest): string {
 }
 
 async function main(): Promise<number> {
+  // npm installs pi's bin on Windows as a .cmd shim, which spawn() cannot start without a shell. The unit tests
+  // still run there; this smoke does not (CONTRIBUTING.md).
+  if (process.platform === "win32") {
+    console.log("wire smoke: skipped on Windows");
+    return 0;
+  }
   const keep = process.argv.includes("--keep");
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "pi-session-affinity-smoke-"));
   const fake = await startFakeModel(FAKE_MODEL);
