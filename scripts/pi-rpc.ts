@@ -8,7 +8,8 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import type { Readable, Writable } from "node:stream";
 
-const repo = path.join(import.meta.dirname, "..");
+export const REPO = path.join(import.meta.dirname, "..");
+export const PI_BIN = path.join(REPO, "node_modules", ".bin", "pi");
 const STEP_TIMEOUT_MS = 60_000;
 
 export const FAKE_PROVIDER = "example-gateway";
@@ -27,6 +28,11 @@ export function writeAgentDir(root: string, port: number, config: unknown): stri
   fs.writeFileSync(path.join(agentDir, "session-affinity.json"), JSON.stringify(config, null, 2));
   fs.writeFileSync(path.join(agentDir, "settings.json"), JSON.stringify({ compaction: { enabled: false, keepRecentTokens: 1 } }, null, 2));
   return agentDir;
+}
+
+/** The environment every pi this harness starts gets: the temporary HOME and agent dir, offline, no telemetry. */
+export function piEnv(root: string, agentDir: string): NodeJS.ProcessEnv {
+  return { ...process.env, HOME: root, PI_CODING_AGENT_DIR: agentDir, PI_OFFLINE: "1", PI_SKIP_VERSION_CHECK: "1", PI_TELEMETRY: "0" };
 }
 
 export type RpcRecord = { type?: string; id?: string; success?: boolean; error?: string; data?: { sessionId?: string }; method?: string; message?: string; notifyType?: string };
@@ -73,18 +79,19 @@ async function promptAndSettle(rpc: RpcClient, id: string, message: string): Pro
 
 /**
  * Drives one session through prompt, prompt, compact, prompt, with this extension plus `extraExtensions` loaded
- * and `model` selected; returns the session id pi reported. `onRecord` sees every RPC record pi writes.
+ * and `model` selected; returns the session id pi reported. `onRecord` sees every RPC record pi writes. The
+ * extension is loaded from `src/index.ts` with `-e`, or, with `installed`, from the package `pi install` put in the
+ * agent dir (pack-install.ts), with nothing passed on the command line.
  */
 export async function driveSession(options: {
-  root: string; agentDir: string; model: string; extraExtensions?: string[]; onRecord?: (record: RpcRecord) => void;
+  root: string; agentDir: string; model: string; installed?: boolean; extraExtensions?: string[]; onRecord?: (record: RpcRecord) => void;
 }): Promise<string> {
   const cwd = path.join(options.root, "project");
   fs.mkdirSync(cwd);
-  const pi = path.join(repo, "node_modules", ".bin", "pi");
-  const extensions = [path.join(repo, "src", "index.ts"), ...(options.extraExtensions ?? [])].flatMap((file) => ["-e", file]);
-  const args = ["--mode", "rpc", "--no-extensions", ...extensions, "--model", options.model, "--no-skills", "--no-prompt-templates", "--no-context-files", "--no-session"];
-  const env = { ...process.env, HOME: options.root, PI_CODING_AGENT_DIR: options.agentDir, PI_OFFLINE: "1", PI_SKIP_VERSION_CHECK: "1", PI_TELEMETRY: "0" };
-  const child = spawn(pi, args, { cwd, env, stdio: ["pipe", "pipe", "inherit"] });
+  const source = options.installed ? [] : ["--no-extensions", "-e", path.join(REPO, "src", "index.ts")];
+  const extensions = [...source, ...(options.extraExtensions ?? []).flatMap((file) => ["-e", file])];
+  const args = ["--mode", "rpc", ...extensions, "--model", options.model, "--no-skills", "--no-prompt-templates", "--no-context-files", "--no-session"];
+  const child = spawn(PI_BIN, args, { cwd, env: piEnv(options.root, options.agentDir), stdio: ["pipe", "pipe", "inherit"] });
   const exited = new Promise<never>((_resolve, reject) => child.on("exit", (code) => reject(new Error(`pi exited (${code}) before the session finished`))));
   const rpc = rpcClient(child, options.onRecord ?? (() => {}));
   const steps = (async () => {

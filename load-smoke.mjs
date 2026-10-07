@@ -20,8 +20,10 @@
  * default export is not an error to pi's loader, it is a silently no-op
  * extension, so the assertion is part of the contract.
  *
- * scripts/wire-smoke.ts goes further: it starts the real pi binary with this
- * extension against a fake model and checks what reaches the wire.
+ * It does not prove pi's package loader finds the extension: it reads the
+ * manifest itself and loads from the working tree. scripts/wire-smoke.ts
+ * does that: it packs the package, installs the tarball's contents with the
+ * real pi's `pi install`, and checks what reaches a fake model.
  */
 import * as fs from "node:fs";
 import * as path from "node:path";

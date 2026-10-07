@@ -38,8 +38,10 @@ new pi session. `pi remove /path/to/pi-session-affinity` undoes it.
 - A change that weakens a guarantee in the README (*What it guarantees*) or the validation rules says so in the
   pull request.
 
-`npm test` must pass. The wire smoke in it starts the vendored pi in RPC mode against a fake model on loopback;
-it needs no network and no key. CI runs everything on Linux and macOS, plus a secret scan and a check of what
+`npm test` must pass. The wire smoke in it packs the package (`npm pack`), installs the unpacked tarball with
+the vendored pi's `pi install` into a temporary agent dir, and drives pi in RPC mode against a fake model on
+loopback, so a wrong `pi.extensions` entry or a file missing from `files` fails it. It needs no network and no
+key. CI runs everything on Linux and macOS, plus a secret scan and a check of what
 the package would publish (`npm run check-pack`).
 
 ## A new pi version

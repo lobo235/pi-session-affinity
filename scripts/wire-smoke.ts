@@ -1,6 +1,6 @@
 /**
- * Wire smoke: the pi this repository vendors, with only this extension loaded, against a fake OpenAI-compatible
- * model on loopback, checked by what actually reaches the wire. No network, no key, no state of the person running
+ * Wire smoke: the pi this repository vendors, with this package packed and installed the way a user installs it
+ * (pack-install.ts), against a fake OpenAI-compatible model on loopback, checked by what actually reaches the wire. No network, no key, no state of the person running
  * it is read or written: HOME and the agent dir are both a new temporary directory.
  *
  * It runs one prompt, a manual compaction and a second prompt in RPC mode, with a config that sets a session
@@ -18,6 +18,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 
 import { startFakeModel } from "./fake-model.ts";
+import { installPackedCopy } from "./pack-install.ts";
 import { FAKE_MODEL, FAKE_PROVIDER, driveSession, writeAgentDir } from "./pi-rpc.ts";
 import { checkWire, type WireRequest } from "./wire-checks.ts";
 
@@ -36,11 +37,13 @@ async function main(): Promise<number> {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "pi-session-affinity-smoke-"));
   const fake = await startFakeModel(FAKE_MODEL);
   try {
-    const sessionId = await driveSession({ root, agentDir: writeAgentDir(root, fake.port, CONFIG), model: `${FAKE_PROVIDER}/${FAKE_MODEL}` });
+    const agentDir = writeAgentDir(root, fake.port, CONFIG);
+    installPackedCopy(root, agentDir);
+    const sessionId = await driveSession({ root, agentDir, model: `${FAKE_PROVIDER}/${FAKE_MODEL}`, installed: true });
     const requests: WireRequest[] = fake.requests();
     const failure = checkWire(requests, { header: HEADER, sessionId, piHeader: "x-session-affinity" });
     if (process.argv.includes("--verbose")) for (const [index, request] of requests.entries()) console.log(describeRequest(index, request));
-    console.log(`wire smoke: ${requests.length} model request(s), session ${sessionId ? "id reported" : "id missing"}: ${failure ?? "ok"}`);
+    console.log(`wire smoke (installed package): ${requests.length} model request(s), session ${sessionId ? "id reported" : "id missing"}: ${failure ?? "ok"}`);
     return failure ? 1 : 0;
   } finally {
     fake.server.close();

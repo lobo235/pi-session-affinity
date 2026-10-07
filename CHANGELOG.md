@@ -20,7 +20,9 @@ The boundary request is experimental and may change in a minor version.
 - `boundary` (experimental): after each compaction, one one-token request ending at the request head, for
   hybrid-attention models on prefix-caching engines. Opt-in per provider, bounded at 120 seconds, cancelled by Esc.
   It carries pi's session id, which adds only pi's own affinity headers, never a change to the body.
-- Tests: unit tests through the extension's events with in-memory fakes, a load smoke through pi's own loader,
-  and a wire smoke that drives the vendored pi against a fake model and checks what reaches the wire.
+- Tests: unit tests through the extension's events with in-memory fakes; a load smoke that loads the entry point
+  through pi's own TypeScript transform and aliases; and a wire smoke that packs the package with `npm pack`,
+  installs the unpacked tarball with the vendored pi's `pi install` (so pi finds it through `pi.extensions` and
+  only the files the package ships), and checks what reaches a fake model on loopback.
 - CI on Linux and macOS (Windows allowed to fail), a secret scan and a package-contents check; a nightly run
   against the newest pi; npm publishing by trusted publishing.
