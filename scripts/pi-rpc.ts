@@ -30,9 +30,17 @@ export function writeAgentDir(root: string, port: number, config: unknown): stri
   return agentDir;
 }
 
+/**
+ * What pi may inherit from the parent: enough to find node and a temp dir and to pick a locale, plus what Windows
+ * needs to start a process at all. Nothing else, so a key in the environment of whoever runs the tests never
+ * reaches the pi they start.
+ */
+const INHERITED_ENV = ["PATH", "TMPDIR", "TMP", "TEMP", "LANG", "LC_ALL", "SystemRoot", "ComSpec", "PATHEXT"];
+
 /** The environment every pi this harness starts gets: the temporary HOME and agent dir, offline, no telemetry. */
-export function piEnv(root: string, agentDir: string): NodeJS.ProcessEnv {
-  return { ...process.env, HOME: root, PI_CODING_AGENT_DIR: agentDir, PI_OFFLINE: "1", PI_SKIP_VERSION_CHECK: "1", PI_TELEMETRY: "0" };
+export function piEnv(root: string, agentDir: string, parent: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+  const inherited = Object.fromEntries(INHERITED_ENV.flatMap((name) => (parent[name] === undefined ? [] : [[name, parent[name]]])));
+  return { ...inherited, HOME: root, PI_CODING_AGENT_DIR: agentDir, PI_OFFLINE: "1", PI_SKIP_VERSION_CHECK: "1", PI_TELEMETRY: "0" };
 }
 
 export type RpcRecord = { type?: string; id?: string; success?: boolean; error?: string; data?: { sessionId?: string }; method?: string; message?: string; notifyType?: string };
