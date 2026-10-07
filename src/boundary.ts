@@ -9,9 +9,13 @@
  * block. Every ordinary request ends far past the head, so after a compaction rewrites the conversation nothing
  * reusable sits at the head's end.
  *
- * The head deliberately stops at the system message and leaves the compaction summary out: the head is then the
- * same at every compaction, so each boundary request re-hits the state the previous one left. A head that ended
- * after the summary would change at every compaction and prefill cold each time.
+ * The head deliberately stops at the system message and leaves the compaction summary out: a hybrid engine resumes
+ * only from a restart point at the end of a request, and a head that held the summary would change at every
+ * compaction and prefill cold each time. Without it the head is the same at every compaction, so each boundary
+ * request re-hits the restart point the previous one left.
+ *
+ * pi's `sessionId` option is passed so pi's own session-affinity headers ride along; it must only add headers.
+ * The body is the one `onPayload` returns, whole (scripts/boundary-session-id.test.ts pins it).
  *
  * Designed twice:
  *   A. send from `session_compact` with a head rebuilt from the session (rejected: the head pi really sends next

@@ -16,6 +16,7 @@ The boundary request is experimental and may change in a minor version.
   problem. A provider the file names that pi does not know is a warning at session start.
 - `boundary` (experimental): after each compaction, one one-token request ending at the request head, for
   hybrid-attention models on prefix-caching engines. Opt-in per provider, bounded at 120 seconds, cancelled by Esc.
+  It carries pi's session id, which adds only pi's own affinity headers, never a change to the body.
 - Tests: unit tests through the extension's events with in-memory fakes, a load smoke through pi's own loader,
   and a wire smoke that drives the vendored pi against a fake model and checks what reaches the wire.
 - CI on Linux and macOS (Windows allowed to fail), a secret scan and a package-contents check; a nightly run

@@ -28,6 +28,7 @@ for (const [name, requests, sessionId, expected] of [
   ["a boundary request without the header", [first, summarizer, boundary({}), second], ID, /boundary request.*x-session-id/],
   ["no request after the boundary request", [first, summarizer, boundary()], ID, /no request after the boundary request/],
   ["a real request whose head differs", [first, summarizer, boundary(), { ...second, body: { ...(second.body as object), messages: [{ role: "system", content: "changed" }] } }], ID, /head/],
+  ["a boundary body with a field the real request lacks", [first, summarizer, { ...boundary(), body: { ...(boundary().body as object), prompt_cache_key: ID } }, second], ID, /body is not the real request's head/],
   ["a real request without the header", [first, summarizer, boundary(), session([{ role: "user", content: "second" }], {})], ID, /request after the boundary request.*x-session-id/],
 ] as const) {
   test(`checkWire: ${name}`, () => {
@@ -36,3 +37,10 @@ for (const [name, requests, sessionId, expected] of [
     else assert.match(verdict ?? "", expected);
   });
 }
+
+test("checkWire: a boundary request without pi's own affinity header fails when one is expected", () => {
+  const requests = [first, summarizer, boundary(), second];
+  assert.match(checkWire(requests, { header: "x-session-id", sessionId: ID, piHeader: "x-session-affinity" }) ?? "", /boundary request carried x-session-affinity/);
+  const withPiHeader = { ...boundary(), headers: { "x-session-id": ID, "x-session-affinity": ID } };
+  assert.equal(checkWire([first, summarizer, withPiHeader, second], { header: "x-session-id", sessionId: ID, piHeader: "x-session-affinity" }), null);
+});

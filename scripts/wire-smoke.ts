@@ -7,7 +7,8 @@
  * header and opts the provider into the boundary request, and passes when:
  *   1. the first request carries the header with the session's id;
  *   2. the first request after the compaction is a boundary request (system message, ".", one output token) that
- *      carries the header too, and the real request follows it with its head unchanged and the header.
+ *      carries the header and pi's own `x-session-affinity` (the model enables `compat.sendSessionAffinityHeaders`),
+ *      and whose body is exactly the real request's cut to its head; the real request follows with the header.
  * Exits 1 naming the first check that failed. `--keep` leaves the temporary directory for inspection; `--verbose`
  * prints one line per request (header present or not, message roles, output cap; no content).
  */
@@ -29,7 +30,8 @@ const STEP_TIMEOUT_MS = 60_000;
 function writeAgentDir(root: string, port: number): string {
   const agentDir = path.join(root, "agent");
   fs.mkdirSync(agentDir, { mode: 0o700 });
-  const model = { id: MODEL, name: MODEL, contextWindow: 131072, maxTokens: 4096, input: ["text"], reasoning: false };
+  // pi's own affinity headers on too, so the run covers the boundary request's sessionId option on the real path.
+  const model = { id: MODEL, name: MODEL, contextWindow: 131072, maxTokens: 4096, input: ["text"], reasoning: false, compat: { sendSessionAffinityHeaders: true } };
   const models = { providers: { [PROVIDER]: { baseUrl: `http://127.0.0.1:${port}/v1`, api: "openai-completions", apiKey: "unused", models: [model] } } };
   fs.writeFileSync(path.join(agentDir, "models.json"), JSON.stringify(models, null, 2));
   const config = { headers: { [PROVIDER]: { [HEADER]: "{sessionId}" } }, boundary: [PROVIDER] };
@@ -124,7 +126,7 @@ async function main(): Promise<number> {
   try {
     const sessionId = await driveSession(root, writeAgentDir(root, fake.port));
     const requests: WireRequest[] = fake.requests();
-    const failure = checkWire(requests, { header: HEADER, sessionId });
+    const failure = checkWire(requests, { header: HEADER, sessionId, piHeader: "x-session-affinity" });
     if (process.argv.includes("--verbose")) for (const [index, request] of requests.entries()) console.log(describeRequest(index, request));
     console.log(`wire smoke: ${requests.length} model request(s), session ${sessionId ? "id reported" : "id missing"}: ${failure ?? "ok"}`);
     return failure ? 1 : 0;

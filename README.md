@@ -129,9 +129,17 @@ prefills the entire head again, often 30k tokens that were sent a hundred times 
 **What it does.** After a compaction, before the first request goes out, the extension sends one extra request
 to the same model: that request's own system message, tools and settings, a user turn of `"."`, and a limit of
 one output token, carrying your configured headers and pi's session id. It ends exactly where the head ends, so
-the engine keeps a state there, and the real request resumes from it. The head stops before the compaction
-summary on purpose: it is then the same at every compaction, so the next boundary request finds the state the
-previous one left and costs well under a second.
+the engine keeps a restart point there, and the real request resumes from it.
+
+**Why the compaction summary is left out.** A hybrid engine resumes only from a restart point at the end of a
+request. A head that held the summary would end somewhere new after every compaction, because the summary changes
+each time, so every boundary request would find no restart point and prefill the whole head cold. A head of just
+the system message and tools is the same at every compaction, so each boundary request resumes from the restart
+point the previous one left and costs well under a second, and the real request then prefills only the summary
+and what follows it.
+
+Passing pi's session id only adds pi's own session-affinity headers (when the model's
+`compat.sendSessionAffinityHeaders` is on); it never changes the request body, and a test pins that.
 
 Measured on a hybrid 27B model on vLLM with prefix caching, a 35k-token head, pi 1.0.4, two compactions:
 
