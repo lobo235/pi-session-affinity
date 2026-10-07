@@ -14,7 +14,7 @@ const session = (messages: object[], headers: Record<string, string> = { "x-sess
 const boundary = (headers: Record<string, string> = { "x-session-id": ID }): WireRequest => ({
   headers, body: { model: "m", messages: [SYSTEM, { role: "user", content: "." }], max_tokens: 1, stream: true },
 });
-const summarizer: WireRequest = { headers: {}, body: { model: "m", messages: [{ role: "system", content: "Summarize." }, { role: "user", content: "the conversation" }], max_tokens: 2000 } };
+const summarizer: WireRequest = { headers: { "x-session-id": ID }, body: { model: "m", messages: [{ role: "system", content: "Summarize." }, { role: "user", content: "the conversation" }], max_tokens: 2000 } };
 const first = session([{ role: "user", content: "first" }]);
 const second = session([{ role: "user", content: "summary" }, { role: "user", content: "second" }]);
 
@@ -25,6 +25,8 @@ for (const [name, requests, sessionId, expected] of [
   ["a first request without the header", [session([{ role: "user", content: "first" }], {}), summarizer, boundary(), second], ID, /first request.*x-session-id/],
   ["a header with another value", [session([{ role: "user", content: "first" }], { "x-session-id": "other" }), summarizer, boundary(), second], ID, /first request.*"other"/],
   ["no boundary request", [first, summarizer, second], ID, /no boundary request/],
+  ["pi's compaction request without the header", [first, session([{ role: "user", content: "summarize" }], {}), boundary(), second], ID, /request #2 \(of 4\) carried x-session-id: null/],
+  ["a later request without the header", [first, summarizer, boundary(), second, session([{ role: "user", content: "third" }], {})], ID, /request #5 \(of 5\)/],
   ["a boundary request without the header", [first, summarizer, boundary({}), second], ID, /boundary request.*x-session-id/],
   ["no request after the boundary request", [first, summarizer, boundary()], ID, /no request after the boundary request/],
   ["a real request whose head differs", [first, summarizer, boundary(), { ...second, body: { ...(second.body as object), messages: [{ role: "system", content: "changed" }] } }], ID, /head/],

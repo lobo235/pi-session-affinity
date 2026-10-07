@@ -8,7 +8,8 @@
  *   1. the first request carries the header with the session's id;
  *   2. the first request after the compaction is a boundary request (system message, ".", one output token) that
  *      carries the header and pi's own `x-session-affinity` (the model enables `compat.sendSessionAffinityHeaders`),
- *      and whose body is exactly the real request's cut to its head; the real request follows with the header.
+ *      and whose body is exactly the real request's cut to its head; the real request follows with the header;
+ *   3. every request carries the header, pi's own compaction (summarizer) request included.
  * Exits 1 naming the first check that failed. `--keep` leaves the temporary directory for inspection; `--verbose`
  * prints one line per request (header present or not, message roles, output cap; no content).
  */

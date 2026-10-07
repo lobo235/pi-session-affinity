@@ -4,7 +4,8 @@ import { buildBoundaryPayload } from "../src/boundary.ts";
 
 /**
  * The wire smoke's verdict over the requests the fake model recorded (wire-smoke.ts): null when the extension did
- * its job, else the first thing that was wrong.
+ * its job, else the first thing that was wrong. Every recorded request is for the named provider, so every one,
+ * pi's own compaction request included, must carry the header.
  */
 
 export interface WireRequest {
@@ -47,5 +48,12 @@ export function checkWire(requests: readonly WireRequest[], expected: { header: 
   if (JSON.stringify(bodyOf(real).messages?.[0]) !== boundaryHead) return "the request after the boundary request has a different head (system message)";
   // The whole boundary body is the real request's own, cut to its head: nothing added, nothing dropped.
   if (!isDeepStrictEqual(requests[boundaryIndex].body, buildBoundaryPayload(real.body))) return "the boundary request's body is not the real request's head";
-  return headerProblem(real, "request after the boundary request", expected.header, expected.sessionId);
+  const realProblem = headerProblem(real, "request after the boundary request", expected.header, expected.sessionId);
+  if (realProblem) return realProblem;
+  // Every request in the smoke goes to the named provider, pi's own compaction request included.
+  for (const [index, request] of requests.entries()) {
+    const problem = headerProblem(request, `request #${index + 1} (of ${requests.length})`, expected.header, expected.sessionId);
+    if (problem) return problem;
+  }
+  return null;
 }
