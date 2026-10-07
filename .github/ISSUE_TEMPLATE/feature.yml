@@ -1,0 +1,27 @@
+name: Feature request
+description: Something pi-session-affinity should do that it does not.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        pi-session-affinity is small on purpose: per-session headers and the boundary request. Describe the
+        problem before the solution: what goes wrong for you today, and how you would know it was fixed.
+        **Do not paste transcripts, requests or session ids**; describe their shape.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What happens today that should not, or what you cannot do.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you propose
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
