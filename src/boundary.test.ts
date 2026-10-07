@@ -5,7 +5,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { buildBoundaryPayload } from "./boundary.ts";
+import { DEFAULT_BOUNDARY_TIMEOUT_MS, buildBoundaryPayload } from "./boundary.ts";
 import sessionAffinity from "./index.ts";
 import { SESSION_ID, fakeCtx, fakePi, fakeRegistry, tempDir, writeConfig, type SentRequest } from "./test-support.ts";
 
@@ -108,6 +108,12 @@ test("an output cap named max_completion_tokens is the one capped, and no second
   assert.equal("max_tokens" in (built ?? {}), false);
 });
 
+test("a request with no output cap gets max_tokens, the name chat-completions engines read", () => {
+  const { max_tokens: _dropped, ...rest } = sessionPayload();
+  assert.equal(buildBoundaryPayload(rest)?.max_tokens, 1);
+  assert.equal("max_completion_tokens" in (buildBoundaryPayload(rest) ?? {}), false);
+});
+
 test("the request pi is about to send is never changed", () => {
   const payload = sessionPayload();
   const before = structuredClone(payload);
@@ -205,5 +211,25 @@ test("a run already aborted when the boundary request would start does not wait 
   const started = Date.now();
   await request();
   assert.ok(Date.now() - started < 1000);
+  assert.equal((registry.sent[0].options.signal as AbortSignal).aborted, true);
+});
+
+test("without a configured bound, the real request waits up to 120 seconds and no longer", { timeout: 5000 }, async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const { pi, emit } = fakePi();
+  const configFile = writeConfig(tempDir(t), BOUNDARY_CONFIG);
+  sessionAffinity(pi as any, { configPath: () => configFile, writeStderr: () => {} });
+  const registry = fakeRegistry({ answer: () => new Promise(() => {}) });
+  const { ctx } = fakeCtx({ provider: "self-hosted", modelId: MODEL_ID, registry });
+  await emit("session_compact", { compactionEntry: {}, fromExtension: false, reason: "threshold", willRetry: false }, ctx);
+  let settled = false;
+  const pending = emit("before_provider_request", { payload: sessionPayload() }, ctx).then(() => { settled = true; });
+  await new Promise((resolve) => setImmediate(resolve));
+  t.mock.timers.tick(119_999);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(settled, false, "the real request stopped waiting before 120 seconds");
+  t.mock.timers.tick(1);
+  await pending;
+  assert.equal(DEFAULT_BOUNDARY_TIMEOUT_MS, 120_000);
   assert.equal((registry.sent[0].options.signal as AbortSignal).aborted, true);
 });

@@ -44,16 +44,12 @@ for (const [name, text, expected] of [
   ["headers that is not an object", '{"headers":["p"]}', /"headers" must be an object/],
   ["a provider name with a space", '{"headers":{"my gateway":{}}}', /"my gateway" is not a provider name/],
   ["a URL instead of a provider name", '{"headers":{"https://gw.example.com/v1":{}}}', /is not a provider name/],
+  ["a provider name starting with a dot", '{"headers":{".gw":{}}}', /"\.gw" is not a provider name/],
+  ["a provider name starting with a hyphen", '{"headers":{"-gw":{}}}', /"-gw" is not a provider name/],
+  ["a provider name starting with an underscore", '{"boundary":["_gw"]}', /"_gw" is not a provider name/],
   ["a provider block that is not an object", '{"headers":{"p":"x-session-id"}}', /"headers"\."p" must be an object/],
   ["a header name with a space", '{"headers":{"p":{"x session":"v"}}}', /"x session" is not an HTTP header name/],
   ["a header name with a colon", '{"headers":{"p":{"x-a:":"v"}}}', /"x-a:" is not an HTTP header name/],
-  ["the __proto__ header name", '{"headers":{"p":{"__proto__":"v"}}}', /"__proto__" cannot be configured/],
-  ["a header the HTTP client owns", '{"headers":{"p":{"Content-Length":"1"}}}', /"Content-Length" cannot be configured/],
-  ["a credential header", '{"headers":{"p":{"Authorization":"x"}}}', /"Authorization" cannot be configured/],
-  ["a gateway's key header (LiteLLM)", '{"headers":{"p":{"X-LiteLLM-API-Key":"x"}}}', /"X-LiteLLM-API-Key" cannot be configured/],
-  ["a provider's key header (Google)", '{"headers":{"p":{"x-goog-api-key":"x"}}}', /"x-goog-api-key" cannot be configured/],
-  ["a provider's key header (Anthropic-style)", '{"headers":{"p":{"anthropic-api-key":"x"}}}', /"anthropic-api-key" cannot be configured/],
-  ["a proxy header", '{"headers":{"p":{"proxy-authorization":"x"}}}', /"proxy-authorization" cannot be configured/],
   ["one header spelled twice in different case", '{"headers":{"p":{"X-A":"1","x-a":"2"}}}', /"X-A" and "x-a" are the same header/],
   ["a value that is a number", '{"headers":{"p":{"x-a":3}}}', /"headers"\."p"\."x-a" must be a string/],
   ["a value that is null", '{"headers":{"p":{"x-a":null}}}', /must be a string/],
@@ -72,6 +68,40 @@ for (const [name, text, expected] of [
     assert.match(result.problem, expected);
   });
 }
+
+// Every header the README lists as reserved, one row each, in a letter case other than the list's.
+for (const [owner, header] of [
+  ["the HTTP client (credentials)", "Authorization"],
+  ["the HTTP client (cookies)", "COOKIE"],
+  ["the transport", "Host"],
+  ["the transport", "Connection"],
+  ["the transport", "Keep-Alive"],
+  ["the transport", "TE"],
+  ["the transport", "Trailer"],
+  ["the transport", "Transfer-Encoding"],
+  ["the transport", "Upgrade"],
+  ["a provider's key", "X-Api-Key"],
+  ["a provider's key", "Api-Key"],
+  ["a gateway's key", "X-LiteLLM-API-Key"],
+  ["a provider's key", "X-Goog-Api-Key"],
+  ["a provider's key", "Anthropic-Api-Key"],
+  ["the HTTP client (any content-*)", "Content-Length"],
+  ["the HTTP client (any content-*)", "content-type"],
+  ["a proxy (any proxy-*)", "Proxy-Authorization"],
+  ["object internals", "__proto__"],
+] as const) {
+  test(`parseConfig refuses the reserved header ${header} (${owner})`, () => {
+    const result = parseConfig(JSON.stringify({ headers: { p: { [header]: "x" } } }));
+    assert.ok("problem" in result, `accepted: ${header}`);
+    assert.match(result.problem, new RegExp(`"${header}" cannot be configured`));
+  });
+}
+
+test("parseConfig: a header that only starts like a reserved one is allowed", () => {
+  for (const header of ["x-api-key-hint", "hostname", "x-content", "proxied-by"]) {
+    assert.ok("config" in parseConfig(JSON.stringify({ headers: { p: { [header]: "x" } } })), header);
+  }
+});
 
 test("readConfigFile: a missing file is the empty config, not a problem", (t) => {
   const result = readConfigFile(path.join(tempDir(t), "session-affinity.json"));

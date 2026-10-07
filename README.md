@@ -87,7 +87,8 @@ Partial use would send some headers and not others, which is harder to notice th
 - header names that are valid HTTP field names, each spelled once (names are case-insensitive);
 - no header the HTTP client, transport or credentials own: `authorization`, `cookie`, `host`, `connection`,
   `keep-alive`, `te`, `trailer`, `transfer-encoding`, `upgrade`, the key headers `x-api-key`, `api-key`,
-  `x-litellm-api-key`, `x-goog-api-key` and `anthropic-api-key`, and any `content-*` or `proxy-*` header;
+  `x-litellm-api-key`, `x-goog-api-key` and `anthropic-api-key`, any `content-*` or `proxy-*` header, and
+  `__proto__`;
 - values that are non-empty strings of printable ASCII and spaces (so no line breaks), at most 1024 characters,
   with no placeholder other than `{sessionId}` (a typo such as `{session_id}` is an error, not a literal);
 - the file at most 64 KiB.
