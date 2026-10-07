@@ -7,7 +7,7 @@ import * as path from "node:path";
 
 const repo = path.join(import.meta.dirname, "..");
 const REQUIRED = ["package.json", "README.md", "LICENSE", "CHANGELOG.md",
-  "src/index.ts", "src/boundary.ts", "src/config.ts", "src/config-reader.ts", "src/headers.ts", "src/notice.ts"];
+  "src/index.ts", "src/boundary.ts", "src/config.ts", "src/config-reader.ts", "src/headers.ts", "src/notice.ts", "src/provider-notices.ts"];
 const FORBIDDEN = [/\.test\.ts$/, /(^|\/)test-support\.ts$/, /^scripts\//, /^\.github\//, /^AGENTS\.md$/, /^CLAUDE\.md$/, /\.env/, /^load-smoke\.mjs$/, /^tsconfig\.json$/];
 
 const packed = JSON.parse(execFileSync("npm", ["pack", "--dry-run", "--json"], { cwd: repo, encoding: "utf8", shell: process.platform === "win32" })) as

@@ -165,3 +165,24 @@ test("the extension registers only the events it needs: no tools, no commands", 
   sessionAffinity(pi as any);
   assert.deepEqual(registered().sort(), ["before_provider_headers", "before_provider_request", "session_compact", "session_start"]);
 });
+
+// A virtual model routes each request to some physical model, possibly another provider's, while ctx.model stays
+// the virtual one; headers chosen by its provider name would reach whichever provider the router picked.
+test("a session on a virtual (routing) model gets no headers, even when its provider is configured", async (t) => {
+  const { send } = load(writeConfig(tempDir(t), { headers: { "example-router": { "x-session-id": "{sessionId}" } } }));
+  assert.deepEqual(await send(fakeCtx({ provider: "example-router", api: "pi-virtual" }).ctx, { "x-kept": "1" }), { "x-kept": "1" });
+});
+
+test("a configured provider that lists virtual models is called out when the session starts", async (t) => {
+  const file = writeConfig(tempDir(t), { headers: { "example-router": { "x-session-id": "{sessionId}" } }, boundary: ["example-gateway"] });
+  const stderr: string[] = [];
+  const { emit } = load(file, stderr);
+  const registry = fakeRegistry({ providers: ["example-gateway"], virtualProviders: ["example-router"] });
+  const { ctx, notices } = fakeCtx({ registry });
+  await emit("session_start", { reason: "startup" }, ctx);
+  assert.equal(notices.length, 1);
+  assert.equal(notices[0].level, "warning");
+  assert.match(notices[0].text, /"example-router"/);
+  assert.match(notices[0].text, /virtual/);
+  assert.doesNotMatch(notices[0].text, /"example-gateway"/);
+});

@@ -12,17 +12,20 @@
  * With no file, or an empty one, the extension does nothing. It registers no tools, commands or prompt text.
  *
  * Known limit: pi's `before_provider_headers` event carries no model, so the provider is the session's model
- * (`ctx.model`), not the request's. In pi 1.0.x every request of the agent loop runs on the session's model.
+ * (`ctx.model`), not the request's. That is the request's provider unless the session's model is a virtual
+ * (routing) model, which can route each request to another provider's model; a session on a virtual model
+ * therefore gets nothing (headers.ts, affinityProviderOf), and the session-start check says so.
  */
 import * as path from "node:path";
 
 import { getAgentDir, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 import { registerBoundaryRequest } from "./boundary.ts";
-import { CONFIG_FILE_NAME, type AffinityConfig } from "./config.ts";
+import { CONFIG_FILE_NAME } from "./config.ts";
 import { createConfigReader } from "./config-reader.ts";
-import { applyAffinityHeaders } from "./headers.ts";
+import { affinityProviderOf, applyAffinityHeaders } from "./headers.ts";
 import { notifyUser, writeProcessStderr, type WriteStderr } from "./notice.ts";
+import { providerNotices } from "./provider-notices.ts";
 
 /** Seams for tests; pi calls the factory with `pi` alone, which means the defaults. */
 export interface SessionAffinityOptions {
@@ -42,12 +45,6 @@ function readOrUndefined<T>(read: () => T): T | undefined {
   }
 }
 
-/** Providers the config names that pi does not know: the typo that would otherwise fail silently. */
-function unknownProviders(config: AffinityConfig, knownProviders: ReadonlySet<string>): string[] {
-  const named = new Set([...config.headers.keys(), ...config.boundary]);
-  return [...named].filter((provider) => !knownProviders.has(provider));
-}
-
 export default function sessionAffinity(pi: ExtensionAPI, options: SessionAffinityOptions = {}): void {
   const writeStderr = options.writeStderr ?? writeProcessStderr;
   const configPath = options.configPath ?? (() => path.join(getAgentDir(), CONFIG_FILE_NAME));
@@ -57,17 +54,14 @@ export default function sessionAffinity(pi: ExtensionAPI, options: SessionAffini
     const config = readConfig(ctx);
     const models = readOrUndefined(() => ctx.modelRegistry.getAll());
     if (config === undefined || models === undefined) return;
-    const unknown = unknownProviders(config, new Set(models.map((model) => model.provider)));
-    if (unknown.length === 0) return;
-    const names = unknown.map((provider) => JSON.stringify(provider)).join(", ");
     const file = readOrUndefined(configPath) ?? CONFIG_FILE_NAME;
-    notifyUser(ctx, `session-affinity: ${file} names ${names}, which pi does not know as a provider, so nothing is ever sent for it`, "warning", writeStderr);
+    for (const notice of providerNotices(config, models, file)) notifyUser(ctx, notice, "warning", writeStderr);
   });
 
   pi.on("before_provider_headers", (event, ctx) => {
     const config = readConfig(ctx);
     if (config === undefined) return;
-    applyAffinityHeaders(event.headers, config, { provider: ctx.model?.provider, sessionId: readOrUndefined(() => ctx.sessionManager.getSessionId()) });
+    applyAffinityHeaders(event.headers, config, { provider: affinityProviderOf(ctx.model), sessionId: readOrUndefined(() => ctx.sessionManager.getSessionId()) });
   });
 
   registerBoundaryRequest(pi, { readConfig, ...(options.boundaryTimeoutMs === undefined ? {} : { timeoutMs: options.boundaryTimeoutMs }) });

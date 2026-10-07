@@ -33,12 +33,12 @@ function sessionPayload(overrides: Record<string, unknown> = {}) {
 }
 
 /** Loads the extension with `config` and returns the pieces a boundary test drives. */
-function setUp(t: { after: (fn: () => void) => void }, config: unknown, options: { answer?: (call: SentRequest) => unknown; timeoutMs?: number; provider?: string; signal?: AbortSignal } = {}) {
+function setUp(t: { after: (fn: () => void) => void }, config: unknown, options: { answer?: (call: SentRequest) => unknown; timeoutMs?: number; provider?: string; api?: string; signal?: AbortSignal } = {}) {
   const { pi, emit } = fakePi();
   const configFile = writeConfig(tempDir(t), config);
   sessionAffinity(pi as any, { configPath: () => configFile, boundaryTimeoutMs: options.timeoutMs ?? 60_000, writeStderr: () => {} });
   const registry = fakeRegistry({ answer: options.answer });
-  const { ctx, notices } = fakeCtx({ provider: options.provider ?? "self-hosted", modelId: MODEL_ID, registry, signal: options.signal });
+  const { ctx, notices } = fakeCtx({ provider: options.provider ?? "self-hosted", modelId: MODEL_ID, api: options.api, registry, signal: options.signal });
   const compact = () => emit("session_compact", { compactionEntry: {}, fromExtension: false, reason: "threshold", willRetry: false }, ctx);
   const request = (payload: unknown = sessionPayload()) => emit("before_provider_request", { payload }, ctx);
   return { registry, ctx, notices, compact, request };
@@ -121,6 +121,7 @@ for (const [name, config, options] of [
   ["the session is on another provider", BOUNDARY_CONFIG, { provider: "example-provider" }],
   ["there is no config file content", {}, {}],
   ["the config file is invalid", { boundary: "self-hosted" }, {}],
+  ["the session is on a virtual (routing) model", BOUNDARY_CONFIG, { api: "pi-virtual" }],
 ] as const) {
   test(`no boundary request when ${name}`, async (t) => {
     const { registry, compact, request } = setUp(t, config, options);

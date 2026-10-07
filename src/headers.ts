@@ -15,6 +15,20 @@ const SESSION_ID_SHAPE = /^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,126}[A-Za-z0-9])?$/;
 
 export type HeaderBag = Record<string, string | null>;
 
+/** pi's API id for a virtual model (pi's VIRTUAL_MODEL_API), kept here so an older pi without the export still loads. */
+export const VIRTUAL_MODEL_API = "pi-virtual";
+
+/**
+ * The provider whose configuration a session's requests get, or undefined when none applies. A virtual (routing)
+ * model routes each request to a physical model, possibly another provider's, while the session's model stays the
+ * virtual one, and pi's header event does not say which model the router picked. Headers chosen by the virtual
+ * model's provider could then reach any provider, so a virtual model gets nothing.
+ */
+export function affinityProviderOf(model: { provider: string; api: string } | undefined): string | undefined {
+  if (model === undefined || model.api === VIRTUAL_MODEL_API) return undefined;
+  return model.provider;
+}
+
 /** Who a request belongs to: the session's provider and its session id, as pi handed them over (untrusted). */
 export interface AffinityRequest {
   provider: string | undefined;

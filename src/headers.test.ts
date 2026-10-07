@@ -5,7 +5,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { parseConfig, type AffinityConfig } from "./config.ts";
-import { applyAffinityHeaders, type HeaderBag } from "./headers.ts";
+import { affinityProviderOf, applyAffinityHeaders, type HeaderBag } from "./headers.ts";
 import { SESSION_ID } from "./test-support.ts";
 
 function configOf(raw: unknown): AffinityConfig {
@@ -54,3 +54,13 @@ test("applyAffinityHeaders: a provider whose block is empty gets nothing", () =>
   assert.deepEqual(applyAffinityHeaders(bag, configOf({ headers: { p: {} } }), { provider: "p", sessionId: SESSION_ID }), []);
   assert.deepEqual(bag, {});
 });
+
+for (const [name, model, expected] of [
+  ["a physical model is judged by its provider", { provider: "example-gateway", api: "openai-completions" }, "example-gateway"],
+  ["a virtual (routing) model gets no provider", { provider: "example-router", api: "pi-virtual" }, undefined],
+  ["no model gets no provider", undefined, undefined],
+] as const) {
+  test(`affinityProviderOf: ${name}`, () => {
+    assert.equal(affinityProviderOf(model), expected);
+  });
+}

@@ -42,7 +42,7 @@ const PLACEHOLDER_SHAPE = /\{[^{}]*\}/g;
  * request or replace a credential, and no routing key needs one. `__proto__` is a valid token, but assigning it
  * to a header object reaches the prototype setter.
  */
-const RESERVED_HEADERS = new Set(["__proto__", "authorization", "connection", "cookie", "host", "keep-alive", "te", "trailer", "transfer-encoding", "upgrade", "x-api-key", "api-key"]);
+const RESERVED_HEADERS = new Set(["__proto__", "authorization", "connection", "cookie", "host", "keep-alive", "te", "trailer", "transfer-encoding", "upgrade", "x-api-key", "api-key", "x-litellm-api-key", "x-goog-api-key", "anthropic-api-key"]);
 const RESERVED_HEADER_PREFIXES = ["content-", "proxy-"];
 
 type Parsed<T> = { value: T } | { problem: string };

@@ -27,7 +27,7 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 import type { ConfigReader } from "./config-reader.ts";
-import { applyAffinityHeaders, type HeaderBag } from "./headers.ts";
+import { affinityProviderOf, applyAffinityHeaders, type HeaderBag } from "./headers.ts";
 
 const BOUNDARY_USER_TURN = { role: "user", content: "." } as const;
 
@@ -93,16 +93,18 @@ type ProviderRequestContext = Parameters<Parameters<ExtensionAPI["on"]>[1]>[1];
 /** Sends the boundary request for `payload` if one applies; resolves when it is answered, bounded or aborted. */
 async function sendBoundaryRequest(payload: unknown, ctx: ProviderRequestContext, options: BoundaryOptions): Promise<void> {
   const model = ctx.model;
-  if (model === undefined) return;
+  // A virtual (routing) model gets none: its next request may go to another provider (headers.ts, affinityProviderOf).
+  const provider = affinityProviderOf(model);
+  if (model === undefined || provider === undefined) return;
   const config = options.readConfig(ctx);
-  if (config === undefined || !config.boundary.has(model.provider)) return;
+  if (config === undefined || !config.boundary.has(provider)) return;
   const boundary = buildBoundaryPayload(payload);
   // The head belongs to the model the request names; sending it with the session's model would cache nothing useful.
   if (boundary === undefined || boundary.model !== model.id) return;
   const sessionId = ctx.sessionManager.getSessionId();
   const transformHeaders = (headers: HeaderBag) => {
     const next = { ...headers };
-    applyAffinityHeaders(next, config, { provider: model.provider, sessionId });
+    applyAffinityHeaders(next, config, { provider, sessionId });
     return next;
   };
   await boundedCall(

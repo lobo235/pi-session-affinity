@@ -18,7 +18,7 @@ npm run check-pack     # what npm would publish: nothing test-only, nothing miss
 
 ## Layout
 
-- `src/index.ts`: the extension entry (events, the session-start warning).
+- `src/index.ts`: the extension entry (events). `src/provider-notices.ts`: the session-start warnings.
 - `src/config.ts`: the config file and its validation; `src/config-reader.ts`: fresh reads and reporting once.
 - `src/headers.ts`: which headers a request gets. `src/boundary.ts`: the boundary request.
 - `src/notice.ts`: how a message reaches the user. `src/test-support.ts`: fakes for the tests (not shipped).

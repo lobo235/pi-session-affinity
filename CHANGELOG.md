@@ -13,7 +13,10 @@ The boundary request is experimental and may change in a minor version.
 - `session-affinity.json` in pi's agent dir, read fresh for every request: `headers` adds per-provider headers to
   every request of a session, with `{sessionId}` replaced by the pi session id. Empty by default: nothing is sent.
 - The config file is validated whole; an invalid file sends nothing and is reported once, naming the file and the
-  problem. A provider the file names that pi does not know is a warning at session start.
+  problem. A provider the file names that pi does not know, or one that lists virtual (routing) models, is a
+  warning at session start.
+- A session on a virtual (routing) model gets no headers and no boundary request, because pi does not say which
+  provider the router picked.
 - `boundary` (experimental): after each compaction, one one-token request ending at the request head, for
   hybrid-attention models on prefix-caching engines. Opt-in per provider, bounded at 120 seconds, cancelled by Esc.
   It carries pi's session id, which adds only pi's own affinity headers, never a change to the body.

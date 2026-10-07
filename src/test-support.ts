@@ -28,12 +28,15 @@ export function fakePi() {
 export interface SentRequest { model: unknown; context: unknown; options: any }
 
 /** A fake model registry: the providers pi knows, and `complete`, which records each call and answers as told. */
-export function fakeRegistry(options: { providers?: string[]; answer?: (call: SentRequest) => unknown } = {}) {
+export function fakeRegistry(options: { providers?: string[]; virtualProviders?: string[]; answer?: (call: SentRequest) => unknown } = {}) {
   const sent: SentRequest[] = [];
   const answer = options.answer ?? (async () => ({ role: "assistant", content: [], stopReason: "length" }));
   return {
     sent,
-    getAll: () => (options.providers ?? []).map((provider) => ({ provider, id: "example-model" })),
+    getAll: () => [
+      ...(options.providers ?? []).map((provider) => ({ provider, id: "example-model", api: "openai-completions" })),
+      ...(options.virtualProviders ?? []).map((provider) => ({ provider, id: "auto", api: "pi-virtual" })),
+    ],
     complete: (model: unknown, context: unknown, callOptions: unknown) => {
       const call = { model, context, options: callOptions };
       sent.push(call);
@@ -46,6 +49,8 @@ export function fakeRegistry(options: { providers?: string[]; answer?: (call: Se
 export function fakeCtx(options: {
   provider?: string;
   modelId?: string;
+  /** The model's API; "pi-virtual" makes it a virtual (routing) model. Default "openai-completions". */
+  api?: string;
   sessionId?: () => unknown;
   registry?: ReturnType<typeof fakeRegistry>;
   hasUI?: boolean;
@@ -53,7 +58,7 @@ export function fakeCtx(options: {
 } = {}) {
   const notices: Array<{ text: string; level: string | undefined }> = [];
   const ctx = {
-    model: options.provider === undefined ? undefined : { provider: options.provider, id: options.modelId ?? "example-model" },
+    model: options.provider === undefined ? undefined : { provider: options.provider, id: options.modelId ?? "example-model", api: options.api ?? "openai-completions" },
     sessionManager: { getSessionId: options.sessionId ?? (() => SESSION_ID) },
     modelRegistry: options.registry ?? fakeRegistry(),
     hasUI: options.hasUI ?? true,

@@ -86,14 +86,15 @@ Partial use would send some headers and not others, which is harder to notice th
 - provider names of letters, digits, `.`, `_` and `-`, starting with a letter or digit;
 - header names that are valid HTTP field names, each spelled once (names are case-insensitive);
 - no header the HTTP client, transport or credentials own: `authorization`, `cookie`, `host`, `connection`,
-  `keep-alive`, `te`, `trailer`, `transfer-encoding`, `upgrade`, `x-api-key`, `api-key`, and any `content-*` or
-  `proxy-*` header;
+  `keep-alive`, `te`, `trailer`, `transfer-encoding`, `upgrade`, the key headers `x-api-key`, `api-key`,
+  `x-litellm-api-key`, `x-goog-api-key` and `anthropic-api-key`, and any `content-*` or `proxy-*` header;
 - values that are non-empty strings of printable ASCII and spaces (so no line breaks), at most 1024 characters,
   with no placeholder other than `{sessionId}` (a typo such as `{session_id}` is an error, not a literal);
 - the file at most 64 KiB.
 
 When a session starts, a provider named in the file that pi does not know is reported as a warning: that is the
-typo that would otherwise mean the session just runs slowly.
+typo that would otherwise mean the session just runs slowly. So is a provider that lists virtual (routing) models,
+which never get anything (see *Known issues*).
 
 ## What it guarantees
 
@@ -180,8 +181,12 @@ and opens an issue when that fails; failures are listed under *Known issues* unt
 ## Known issues
 
 - **The provider is the session's, not the request's.** pi's header event does not say which model a request is
-  for, so the extension uses the session's current model. In pi 1.0.x every request of a session's agent loop
-  uses that model; a feature that called a second provider mid-session would be judged by the session's.
+  for, so the extension uses the session's current model. A request pi sends to another provider during a session
+  (from an extension that calls a second model, for example) is judged by the session's.
+- **Sessions on a virtual (routing) model get nothing.** A virtual model hands each request to a model it picks,
+  possibly on another provider, and pi does not tell the header event which one. Rather than send one provider's
+  headers to another, the extension adds no headers and makes no boundary request while the session's model is
+  virtual, and warns at session start when the config names a provider that lists virtual models.
 - **Child pi processes started with `--no-extensions`** (some subagent extensions do this) send no headers.
 - **Compaction extensions that call the model registry directly** do not get the headers (see *What it
   guarantees*).
