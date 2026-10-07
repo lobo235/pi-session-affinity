@@ -22,7 +22,9 @@ npm run check-pack     # what npm would publish: nothing test-only, nothing miss
 - `src/config.ts`: the config file and its validation; `src/config-reader.ts`: fresh reads and reporting once.
 - `src/headers.ts`: which headers a request gets. `src/boundary.ts`: the boundary request.
 - `src/notice.ts`: how a message reaches the user. `src/test-support.ts`: fakes for the tests (not shipped).
-- `scripts/`: the wire smoke, its fake model and checks, and the package check. `load-smoke.mjs`: pi's loader.
+- `scripts/`: the wire smoke (`wire-smoke.ts`, run against the packed and `pi install`ed package by
+  `pack-install.ts`), the real-pi driver (`pi-rpc.ts`), its fake model and checks, the real-pi tests
+  (`*.test.ts`), and the package check. `load-smoke.mjs`: pi's TypeScript transform on the entry point.
 
 ## Invariants (do not break these)
 

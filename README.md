@@ -32,8 +32,10 @@ You do not need it if:
 - **your gateway already reads one of the headers pi can send on its own.** With
   `compat.sendSessionAffinityHeaders: true` in `models.json`, pi's `openai-completions` and `anthropic-messages`
   models send the session id in a fixed set of headers (`x-session-affinity`, `x-client-request-id`,
-  `session_id` or `x-session-id`, depending on the API and `compat.sessionAffinityFormat`). If one of those works
-  for your gateway, use it and skip this extension's `headers`.
+  `session_id` or `x-session-id`, depending on the API and `compat.sessionAffinityFormat`). pi's
+  `openai-responses` models send `x-client-request-id` (and `session_id` or `x-session-id`) whatever
+  `compat.sendSessionAffinityHeaders` says, unless prompt caching is off. If one of those works for your gateway,
+  use it and skip this extension's `headers`.
 
 Measured on a self-hosted model behind LiteLLM with session affinity, balancing two vLLM engines, over one real
 conversation of 12 requests whose prompt grew from 54k to 82k tokens:
@@ -53,7 +55,8 @@ pi install npm:pi-session-affinity
 ```
 
 Then create the config file (below) and start a new pi session. Requirements: Node.js 22.19 or newer (pi's own
-requirement). Linux and macOS are tested; Windows is not.
+requirement). Linux and macOS are tested. Windows is not supported yet: CI runs it, but it is not required to
+pass.
 
 ## Configuration
 
@@ -97,6 +100,13 @@ When a session starts, a provider named in the file that pi does not know is rep
 typo that would otherwise mean the session just runs slowly. So is a provider that lists virtual (routing) models,
 which never get anything (see *Known issues*).
 
+## Turning it off
+
+- **Everything:** delete `session-affinity.json`, or empty it (or make it `{}`). Like any edit, this applies from
+  the next request, with no restart.
+- **Only the boundary request:** set `"boundary": []` and keep `headers`.
+- **Uninstall:** `pi remove npm:pi-session-affinity`. pi processes started after that no longer load it.
+
 ## What it guarantees
 
 - **Only the providers you name get anything.** Every other request is left exactly as pi built it.
@@ -109,9 +119,10 @@ which never get anything (see *Known issues*).
   headers.
 
 The session id is the one pi shows in `/session`. A resumed session (`-c`, `-r`) keeps it, so it returns to the
-engine that still holds its cache; `/new`, a fork and a branch get a new one, which is right, since they share no
-conversation with the old session beyond the fixed system prompt. pi's own compaction requests carry the headers
-too. A compaction extension that calls the model registry directly does not go through pi's header event, so its
+engine that still holds its cache, and so does moving to another branch with `/tree`, which stays in the same
+session file. `/new`, `/fork` and `/clone` start a new session with a new id, so their requests may land on
+another engine; a fork or clone that shares a long history with the old session pays for it once there. pi's
+own compaction requests carry the headers too (the wire smoke checks every request). A compaction extension that calls the model registry directly does not go through pi's header event, so its
 requests do not; [Longhaul](https://github.com/lobo235/pi-longhaul) has its own `summarizerHeaders` setting, with
 the same shape, for exactly this.
 
@@ -172,7 +183,7 @@ request is never changed. The real request waits for the boundary request, but n
 request that fails is ignored, one that has not answered by then is cancelled, and pressing Esc cancels it at
 once. It goes through pi's model registry, which does not fire pi's request events, so it cannot trigger itself.
 
-## Compatibility
+## pi versions
 
 Built and tested on pi 1.0.4. It uses only pi's public extension events (`session_start`, `session_compact`,
 `before_provider_headers`, `before_provider_request`) and the context's model registry, with no imports from pi's
@@ -193,7 +204,8 @@ and opens an issue when that fails; failures are listed under *Known issues* unt
   guarantees*).
 - **The boundary request supports chat-completions payloads only.** Anthropic Messages and OpenAI Responses
   requests are skipped.
-- **Windows is untested.**
+- **Windows is not supported yet.** CI runs the unit tests on it, but they are not required to pass, and the
+  wire smoke is skipped there.
 
 ## Versioning
 
@@ -203,10 +215,10 @@ guarantees above. Removing or changing any of these is a major version. The boun
 its behaviour may change in a minor version until it is declared stable. The TypeScript modules are not an API;
 importing them from another package is unsupported. Changes are listed in [CHANGELOG.md](CHANGELOG.md).
 
-## Contributing and security
+## More
 
-See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md) and the
-[Code of Conduct](CODE_OF_CONDUCT.md).
+- [CHANGELOG.md](CHANGELOG.md): what changed in each version.
+- [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
 ## License
 

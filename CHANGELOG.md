@@ -24,5 +24,5 @@ The boundary request is experimental and may change in a minor version.
   through pi's own TypeScript transform and aliases; and a wire smoke that packs the package with `npm pack`,
   installs the unpacked tarball with the vendored pi's `pi install` (so pi finds it through `pi.extensions` and
   only the files the package ships), and checks what reaches a fake model on loopback.
-- CI on Linux and macOS (Windows allowed to fail), a secret scan and a package-contents check; a nightly run
+- CI on Linux and macOS (Windows runs but is not required to pass), a secret scan and a package-contents check; a nightly run
   against the newest pi; npm publishing by trusted publishing.

@@ -41,14 +41,40 @@ new pi session. `pi remove /path/to/pi-session-affinity` undoes it.
 `npm test` must pass. The wire smoke in it packs the package (`npm pack`), installs the unpacked tarball with
 the vendored pi's `pi install` into a temporary agent dir, and drives pi in RPC mode against a fake model on
 loopback, so a wrong `pi.extensions` entry or a file missing from `files` fails it. It needs no network and no
-key. CI runs everything on Linux and macOS, plus a secret scan and a check of what
-the package would publish (`npm run check-pack`).
+key. CI runs everything on Linux and macOS, the unit tests on Windows without gating on them (the wire smoke
+skips itself there: npm installs pi's bin as a `.cmd` shim that cannot be spawned without a shell), a secret
+scan, and a check of what the package would publish (`npm run check-pack`).
 
 ## A new pi version
 
 The extension uses only pi's public extension events, so there is no list of verified versions. A nightly job
 tests it against the newest pi on npm and opens an issue when that fails. To check one by hand: set the exact
 version of `@earendil-works/pi-coding-agent` in `devDependencies`, `npm install`, and `npm test`.
+
+## Releasing (maintainers)
+
+1. Set `version` in `package.json` (and the lockfile: `npm install --package-lock-only`). A version with a
+   `-` (`1.0.0-rc.1`) is published under the `next` dist-tag, anything else under `latest`.
+2. Rename `## [Unreleased]` in `CHANGELOG.md` to `## [vX.Y.Z] - YYYY-MM-DD`, with the `v`: the release job
+   checks for it. Put a fresh empty `## [Unreleased]` above it.
+3. Merge to `main`, tag that commit `vX.Y.Z`, and push the tag. `release.yml` re-runs the tests and the package
+   check, then waits in the `npm` environment for a maintainer's approval and publishes with provenance.
+
+The first publish of a new package cannot go through the workflow: npm configures a trusted publisher only for a
+package that already exists. It is a manual `npm publish --access public` with two-factor authentication, from
+a clean checkout of the tag after `npm ci && npm test && npm run check-pack`. Right after it: configure the
+trusted publisher on npmjs.com (this repository, workflow `release.yml`, environment `npm`), set the package to
+require two-factor authentication and disallow tokens, and delete any token used. A trusted publisher
+configuration that has not published within two days expires, so the next release should follow soon or the
+configuration be made again.
+
+Repository settings the workflows and docs rely on:
+
+- an `npm` environment with required reviewers (without them, "waits for a maintainer's approval" is false) and
+  a deployment rule limited to `v*` tags, and a ruleset that protects `v*` tags and `main` (required checks, no
+  force push);
+- Issues enabled (the nightly job opens one when the newest pi fails);
+- Discussions (the issue template links to them) and private vulnerability reporting (SECURITY.md does).
 
 ## Licence
 
