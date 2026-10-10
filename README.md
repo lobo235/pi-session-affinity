@@ -1,6 +1,6 @@
 # pi-session-affinity
 
-![pi-session-affinity: the same twelve-request conversation without the header, moving between two engines five times, and with it, staying on one; median time to first token 1.5 s against 7.5 s, worst 7.7 s against 28.9 s, 4,136 tokens recomputed against 51,483](https://raw.githubusercontent.com/lobo235/pi-session-affinity/main/.github/assets/infographic.png)
+![pi-session-affinity: 5x faster to the first token on one real conversation behind a gateway balancing two engines, median 7.5 s to 1.5 s and worst 28.9 s to 7.7 s; without the header the conversation changed engines five times and recomputed 51,483 tokens, with it none and 4,136](https://raw.githubusercontent.com/lobo235/pi-session-affinity/main/.github/assets/infographic.png)
 
 **One conversation, one warm engine.** pi-session-affinity keeps each [pi](https://github.com/earendil-works/pi) conversation on the inference
 engine that holds its prompt cache. On one measured conversation behind a gateway balancing two engines, the
