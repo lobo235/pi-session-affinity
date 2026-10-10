@@ -77,6 +77,9 @@ your requests. There are no environment variables.
 | `headers` | `{}` | `{"<provider>": {"<header>": "<template>"}}`. Every request of a session whose model belongs to `<provider>` (a provider name from `models.json` or pi's built-in list, matched exactly) gets each header. `{sessionId}` in a template is replaced by the pi session id; it is the only placeholder. A template without it is sent as written. |
 | `boundary` | `[]` | Provider names whose sessions get a boundary request after each compaction. **Experimental**; see *The boundary request*. Independent of `headers`. |
 
+**Header values are not secret.** Every header is sent on every request of a session on that provider, so put
+no credential in a template; pi's provider configuration is the place for keys.
+
 The file is read again for every request, so an edit applies to the next request without restarting pi. No
 file, an empty file, or `{}` means nothing is sent and no boundary request is made.
 
@@ -215,7 +218,7 @@ importing them from another package is unsupported. Changes are listed in [CHANG
 ## More
 
 - [CHANGELOG.md](CHANGELOG.md): what changed in each version.
-- [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+- [CONTRIBUTING.md](https://github.com/lobo235/pi-session-affinity/blob/main/CONTRIBUTING.md), [SECURITY.md](https://github.com/lobo235/pi-session-affinity/blob/main/SECURITY.md), [CODE_OF_CONDUCT.md](https://github.com/lobo235/pi-session-affinity/blob/main/CODE_OF_CONDUCT.md).
 
 ## License
 

@@ -1,7 +1,7 @@
 {
   "name": "pi-session-affinity",
   "version": "0.0.0",
-  "description": "Keep one pi conversation on one inference engine: a per-session routing header for gateways that route by session, and an optional post-compaction boundary request for hybrid-attention engines.",
+  "description": "Faster pi on self-hosted and gateway-routed models: keeps each conversation on the inference engine that holds its prompt cache with a per-session routing header, plus an optional post-compaction boundary request.",
   "type": "module",
   "license": "MIT",
   "author": "Justin Barlow",
@@ -16,14 +16,23 @@
   "keywords": [
     "pi-package",
     "pi",
+    "pi-extension",
+    "pi-coding-agent",
+    "coding-agent",
+    "llm",
+    "ai-agents",
     "session-affinity",
     "prefix-cache",
-    "coding-agent"
+    "prompt-caching",
+    "kv-cache",
+    "litellm",
+    "vllm"
   ],
   "pi": {
     "extensions": [
       "./src/index.ts"
-    ]
+    ],
+    "image": "https://raw.githubusercontent.com/lobo235/pi-session-affinity/v1.0.0/.github/assets/card.png"
   },
   "files": [
     "src/**/*.ts",
