@@ -3,7 +3,7 @@
  * loopback (fake-model.ts): the shared driver of the wire smoke and the real-pi tests. No network, no key, no state
  * of the person running it is read or written.
  */
-import { spawn, type ChildProcessByStdio } from "node:child_process";
+import { execFileSync, spawn, type ChildProcessByStdio } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import type { Readable, Writable } from "node:stream";
@@ -11,7 +11,12 @@ import type { Readable, Writable } from "node:stream";
 import { CONFIG_FILE_NAME } from "../src/config.ts";
 
 export const REPO = path.join(import.meta.dirname, "..");
-export const PI_BIN = path.join(REPO, "node_modules", ".bin", "pi");
+const PI_PACKAGE = path.join(REPO, "node_modules", "@earendil-works", "pi-coding-agent");
+/**
+ * The vendored pi's entry script, from its package.json `bin`. pi is started as `node <entry>` rather than through
+ * `node_modules/.bin/pi`: on Windows npm installs that bin as a .cmd shim, which spawn() cannot start without a shell.
+ */
+const PI_CLI = path.join(PI_PACKAGE, (JSON.parse(fs.readFileSync(path.join(PI_PACKAGE, "package.json"), "utf8")) as { bin: { pi: string } }).bin.pi);
 const STEP_TIMEOUT_MS = 60_000;
 
 export const FAKE_PROVIDER = "example-gateway";
@@ -34,7 +39,7 @@ export function writeAgentDir(root: string, port: number, config: unknown): stri
 
 /**
  * What pi may inherit from the parent: enough to find node and a temp dir and to pick a locale, plus what Windows
- * needs to start a process at all. Nothing else, so a key in the environment of whoever runs the tests never
+ * needs to start a process at all. HOME and USERPROFILE (Windows' home) are always the temporary root. Nothing else, so a key in the environment of whoever runs the tests never
  * reaches the pi they start.
  */
 const INHERITED_ENV = ["PATH", "TMPDIR", "TMP", "TEMP", "LANG", "LC_ALL", "SystemRoot", "ComSpec", "PATHEXT"];
@@ -42,7 +47,17 @@ const INHERITED_ENV = ["PATH", "TMPDIR", "TMP", "TEMP", "LANG", "LC_ALL", "Syste
 /** The environment every pi this harness starts gets: the temporary HOME and agent dir, offline, no telemetry. */
 export function piEnv(root: string, agentDir: string, parent: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
   const inherited = Object.fromEntries(INHERITED_ENV.flatMap((name) => (parent[name] === undefined ? [] : [[name, parent[name]]])));
-  return { ...inherited, HOME: root, PI_CODING_AGENT_DIR: agentDir, PI_OFFLINE: "1", PI_SKIP_VERSION_CHECK: "1", PI_TELEMETRY: "0" };
+  return { ...inherited, HOME: root, USERPROFILE: root, PI_CODING_AGENT_DIR: agentDir, PI_OFFLINE: "1", PI_SKIP_VERSION_CHECK: "1", PI_TELEMETRY: "0" };
+}
+
+/** Starts the vendored pi with `args` under the node running this script, in `cwd`, with piEnv's environment. */
+export function spawnPi(args: string[], cwd: string, root: string, agentDir: string): ChildProcessByStdio<Writable, Readable, null> {
+  return spawn(process.execPath, [PI_CLI, ...args], { cwd, env: piEnv(root, agentDir), stdio: ["pipe", "pipe", "inherit"] });
+}
+
+/** Runs the vendored pi with `args` to completion; throws, with its stderr, when it exits non-zero. */
+export function runPi(args: string[], cwd: string, root: string, agentDir: string): void {
+  execFileSync(process.execPath, [PI_CLI, ...args], { cwd, env: piEnv(root, agentDir), stdio: ["ignore", "pipe", "pipe"] });
 }
 
 export type RpcRecord = { type?: string; id?: string; success?: boolean; error?: string; data?: { sessionId?: string }; method?: string; message?: string; notifyType?: string };
@@ -101,7 +116,7 @@ export async function driveSession(options: {
   const source = options.installed ? [] : ["--no-extensions", "-e", path.join(REPO, "src", "index.ts")];
   const extensions = [...source, ...(options.extraExtensions ?? []).flatMap((file) => ["-e", file])];
   const args = ["--mode", "rpc", ...extensions, "--model", options.model, "--no-skills", "--no-prompt-templates", "--no-context-files", "--no-session"];
-  const child = spawn(PI_BIN, args, { cwd, env: piEnv(options.root, options.agentDir), stdio: ["pipe", "pipe", "inherit"] });
+  const child = spawnPi(args, cwd, options.root, options.agentDir);
   const exited = new Promise<never>((_resolve, reject) => child.on("exit", (code) => reject(new Error(`pi exited (${code}) before the session finished`))));
   const rpc = rpcClient(child, options.onRecord ?? (() => {}));
   const steps = (async () => {

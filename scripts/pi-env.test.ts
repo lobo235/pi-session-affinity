@@ -8,18 +8,19 @@ import { execFileSync } from "node:child_process";
 
 import { piEnv } from "./pi-rpc.ts";
 
-const PARENT = { PATH: "/usr/bin", LANG: "C.UTF-8", TMPDIR: "/tmp/x", FAKE_API_KEY: "sentinel-key", OPENAI_API_KEY: "sentinel-openai", HOME: "/home/someone", PI_CODING_AGENT_DIR: "/home/someone/.pi/agent" };
+const PARENT = { PATH: "/usr/bin", LANG: "C.UTF-8", TMPDIR: "/tmp/x", FAKE_API_KEY: "sentinel-key", OPENAI_API_KEY: "sentinel-openai", HOME: "/home/someone", USERPROFILE: "C:\\Users\\someone", PI_CODING_AGENT_DIR: "/home/someone/.pi/agent" };
 
 test("piEnv: a key in the parent's environment is not passed on, and only allowlisted names are", () => {
   const env = piEnv("/scratch/root", "/scratch/root/agent", PARENT);
   assert.equal(env.FAKE_API_KEY, undefined);
   assert.equal(env.OPENAI_API_KEY, undefined);
-  assert.deepEqual(Object.keys(env).sort(), ["HOME", "LANG", "PATH", "PI_CODING_AGENT_DIR", "PI_OFFLINE", "PI_SKIP_VERSION_CHECK", "PI_TELEMETRY", "TMPDIR"]);
+  assert.deepEqual(Object.keys(env).sort(), ["HOME", "LANG", "PATH", "PI_CODING_AGENT_DIR", "PI_OFFLINE", "PI_SKIP_VERSION_CHECK", "PI_TELEMETRY", "TMPDIR", "USERPROFILE"]);
 });
 
-test("piEnv: HOME and the agent dir are the smoke's own, never the parent's", () => {
+test("piEnv: HOME (USERPROFILE on Windows) and the agent dir are the smoke's own, never the parent's", () => {
   const env = piEnv("/scratch/root", "/scratch/root/agent", PARENT);
   assert.equal(env.HOME, "/scratch/root");
+  assert.equal(env.USERPROFILE, "/scratch/root");
   assert.equal(env.PI_CODING_AGENT_DIR, "/scratch/root/agent");
 });
 

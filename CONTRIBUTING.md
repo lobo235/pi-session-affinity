@@ -41,9 +41,8 @@ new pi session. `pi remove /path/to/pi-session-affinity` undoes it.
 `npm test` must pass. The wire smoke in it packs the package (`npm pack`), installs the unpacked tarball with
 the vendored pi's `pi install` into a temporary agent dir, and drives pi in RPC mode against a fake model on
 loopback, so a wrong `pi.extensions` entry or a file missing from `files` fails it. It needs no network and no
-key, and pi gets only an allowlisted environment (`PATH`, temp dir, locale), so your own keys never reach it. CI runs everything on Linux and macOS, the unit tests on Windows without gating on them (the wire smoke
-skips itself there: npm installs pi's bin as a `.cmd` shim that cannot be spawned without a shell), a secret
-scan, and a check of what the package would publish (`npm run check-pack`).
+key, and pi gets only an allowlisted environment (`PATH`, temp dir, locale), so your own keys never reach it. CI runs everything on Linux, macOS and Windows (pi is started as `node` on its own entry script, never through
+npm's `.cmd` shim), a secret scan, and a check of what the package would publish (`npm run check-pack`).
 
 ## A new pi version
 
