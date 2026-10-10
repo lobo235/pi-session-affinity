@@ -32,7 +32,7 @@
     "extensions": [
       "./src/index.ts"
     ],
-    "image": "https://raw.githubusercontent.com/lobo235/pi-session-affinity/v1.0.0/.github/assets/card.png"
+    "image": "https://raw.githubusercontent.com/lobo235/pi-session-affinity/v1.0.0/.github/assets/infographic.png"
   },
   "files": [
     "src/**/*.ts",
