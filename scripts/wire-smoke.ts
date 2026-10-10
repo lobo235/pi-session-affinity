@@ -48,7 +48,7 @@ async function main(): Promise<number> {
   } finally {
     fake.server.close();
     if (keep) console.log(`kept ${root}`);
-    else fs.rmSync(root, { recursive: true, force: true });
+    else fs.rmSync(root, { recursive: true, force: true, maxRetries: 5 });
   }
 }
 
