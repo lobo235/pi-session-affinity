@@ -21,6 +21,7 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     outputs:
       version: ${{ steps.pi.outputs.version }}
     steps:
@@ -53,8 +54,9 @@ jobs:
     needs: test
     if: failure() && needs.test.outputs.version != ''
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
-      issues: write
+      issues: write # open or update the nightly issue
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}

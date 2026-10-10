@@ -42,7 +42,7 @@ new pi session. `pi remove /path/to/pi-session-affinity` undoes it.
 the vendored pi's `pi install` into a temporary agent dir, and drives pi in RPC mode against a fake model on
 loopback, so a wrong `pi.extensions` entry or a file missing from `files` fails it. It needs no network and no
 key, and pi gets only an allowlisted environment (`PATH`, temp dir, locale), so your own keys never reach it. CI runs everything on Linux, macOS and Windows (pi is started as `node` on its own entry script, never through
-npm's `.cmd` shim), a secret scan, and a check of what the package would publish (`npm run check-pack`).
+npm's `.cmd` shim), a secret scan, a security audit of the workflows (zizmor), and a check of what the package would publish (`npm run check-pack`).
 
 ## A new pi version
 
@@ -72,6 +72,10 @@ Repository settings the workflows and docs rely on:
 - an `npm` environment with required reviewers (without them, "waits for a maintainer's approval" is false) and
   a deployment rule limited to `v*` tags, and a ruleset that protects `v*` tags and `main` (required checks, no
   force push);
+- the `main` ruleset requires a pull request with its review threads resolved and a linear history (squash or
+  rebase merges), and every CI check: the `test` legs, `workflows` and `secrets`. Maintainers can bypass it;
+- Dependabot alerts and security updates, plus the weekly version updates in `.github/dependabot.yml`; CodeQL
+  default setup; secret scanning with push protection;
 - Issues enabled (the nightly job opens one when the newest pi fails);
 - Discussions (the issue template links to them) and private vulnerability reporting (SECURITY.md does).
 
