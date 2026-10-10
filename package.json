@@ -1,6 +1,6 @@
 {
   "name": "pi-session-affinity",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Faster pi on self-hosted and gateway-routed models: keeps each conversation on the inference engine that holds its prompt cache with a per-session routing header, plus an optional post-compaction boundary request.",
   "type": "module",
   "license": "MIT",

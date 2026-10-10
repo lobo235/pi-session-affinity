@@ -8,6 +8,8 @@ The boundary request is experimental and may change in a minor version.
 
 ## [Unreleased]
 
+## [v1.0.0] - 2026-10-10
+
 ### Added
 
 - `session-affinity.json` in pi's agent dir, read fresh for every request: `headers` adds per-provider headers to
