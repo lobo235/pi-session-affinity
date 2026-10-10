@@ -1,6 +1,16 @@
 # pi-session-affinity
 
-**Keep one [pi](https://github.com/earendil-works/pi) conversation on one inference engine.**
+![pi-session-affinity: the same twelve-request conversation without the header, moving between two engines five times, and with it, staying on one; median time to first token 1.5 s against 7.5 s, worst 7.7 s against 28.9 s, 4,136 tokens recomputed against 51,483](https://raw.githubusercontent.com/lobo235/pi-session-affinity/main/.github/assets/infographic.png)
+
+**One conversation, one warm engine.** pi-session-affinity keeps each [pi](https://github.com/earendil-works/pi) conversation on the inference
+engine that holds its prompt cache. On one measured conversation behind a gateway balancing two engines, the
+median time to first token fell from 7.5 s to 1.5 s, and the worst from 28.9 s to 7.7 s.
+
+```bash
+pi install npm:pi-session-affinity
+```
+
+## Why pi-session-affinity
 
 A prompt cache belongs to one inference engine. When a gateway spreads one model across several engines and
 picks one per request, a pi conversation that moves to another engine pays for its whole prompt again: at 50k
