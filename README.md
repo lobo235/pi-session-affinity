@@ -55,8 +55,7 @@ pi install npm:pi-session-affinity
 ```
 
 Then create the config file (below) and start a new pi session. Requirements: Node.js 22.19 or newer (pi's own
-requirement). Linux and macOS are tested. Windows is not supported yet: CI runs it, but it is not required to
-pass.
+requirement). Linux, macOS and Windows are tested.
 
 ## Configuration
 
@@ -204,8 +203,6 @@ and opens an issue when that fails; failures are listed under *Known issues* unt
   guarantees*).
 - **The boundary request supports chat-completions payloads only.** Anthropic Messages and OpenAI Responses
   requests are skipped.
-- **Windows is not supported yet.** CI runs the unit tests on it, but they are not required to pass, and the
-  wire smoke is skipped there.
 
 ## Versioning
 
