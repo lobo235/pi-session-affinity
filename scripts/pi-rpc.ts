@@ -4,6 +4,7 @@
  * of the person running it is read or written.
  */
 import { execFileSync, spawn, type ChildProcessByStdio } from "node:child_process";
+import { once } from "node:events";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import type { Readable, Writable } from "node:stream";
@@ -132,6 +133,12 @@ export async function driveSession(options: {
   } finally {
     child.removeAllListeners("exit");
     child.stdin.end();
-    child.kill();
+    // Return only once pi has exited: Windows refuses to delete a directory a running process works in, so a
+    // caller's cleanup would fail, and a test's remaining cleanup (the fake model's server) would never run.
+    if (child.exitCode === null && child.signalCode === null) {
+      const gone = once(child, "exit");
+      child.kill();
+      await gone;
+    }
   }
 }

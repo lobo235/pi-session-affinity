@@ -17,9 +17,12 @@ const CONFIG = { headers: { "example-router": { "x-session-id": "{sessionId}", "
 
 test("a virtual model routed to another provider receives no configured header and no boundary request", { timeout: 180_000 }, async (t) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "pi-session-affinity-virtual-"));
-  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const fake = await startFakeModel(FAKE_MODEL);
-  t.after(() => fake.server.close());
+  // One hook, the server first: a cleanup that throws must not leave the server holding the test process open.
+  t.after(() => {
+    fake.server.close();
+    fs.rmSync(root, { recursive: true, force: true, maxRetries: 5 });
+  });
   const notices: RpcRecord[] = [];
   await driveSession({
     root,
