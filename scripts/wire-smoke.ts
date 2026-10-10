@@ -20,14 +20,14 @@ import * as path from "node:path";
 import { startFakeModel } from "./fake-model.ts";
 import { installPackedCopy } from "./pack-install.ts";
 import { FAKE_MODEL, FAKE_PROVIDER, driveSession, writeAgentDir } from "./pi-rpc.ts";
-import { checkWire, type WireRequest } from "./wire-checks.ts";
+import { bodyOf, checkWire, type WireRequest } from "./wire-checks.ts";
 
 const HEADER = "x-session-id";
 const CONFIG = { headers: { [FAKE_PROVIDER]: { [HEADER]: "{sessionId}" } }, boundary: [FAKE_PROVIDER] };
 
 /** One line per request for `--verbose`: the header's presence, the message roles and the output cap, never content. */
 function describeRequest(index: number, request: WireRequest): string {
-  const body = (request.body ?? {}) as { messages?: Array<{ role?: string }>; max_tokens?: number; max_completion_tokens?: number };
+  const body = bodyOf(request);
   const roles = (body.messages ?? []).map((message) => message.role ?? "?").join(",");
   return `  #${index + 1} ${HEADER}=${request.headers[HEADER] === undefined ? "absent" : "present"} messages=[${roles}] cap=${body.max_tokens ?? body.max_completion_tokens ?? "none"}`;
 }

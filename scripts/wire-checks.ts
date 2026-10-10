@@ -13,9 +13,9 @@ export interface WireRequest {
   body: unknown;
 }
 
-type ChatBody = { messages?: Array<{ role?: string; content?: unknown }>; max_tokens?: number; max_completion_tokens?: number };
+export type ChatBody = { messages?: Array<{ role?: string; content?: unknown }>; max_tokens?: number; max_completion_tokens?: number };
 
-const bodyOf = (request: WireRequest): ChatBody => (typeof request.body === "object" && request.body !== null ? (request.body as ChatBody) : {});
+export const bodyOf = (request: WireRequest): ChatBody => (typeof request.body === "object" && request.body !== null ? (request.body as ChatBody) : {});
 
 function isBoundary(request: WireRequest): boolean {
   const body = bodyOf(request);

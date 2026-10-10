@@ -5,6 +5,8 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 
+import { CONFIG_FILE_NAME } from "./config.ts";
+
 type Handler = (event: any, ctx: any) => unknown;
 
 export const SESSION_ID = "0199a1b2-c3d4-7e5f-8a6b-7c8d9e0f1a2b";
@@ -77,7 +79,7 @@ export function tempDir(t: { after: (fn: () => void) => void }): string {
 
 /** Writes `content` (JSON-encoded unless it is already a string) as the config file in `dir`; returns its path. */
 export function writeConfig(dir: string, content: unknown): string {
-  const file = path.join(dir, "session-affinity.json");
+  const file = path.join(dir, CONFIG_FILE_NAME);
   fs.writeFileSync(file, typeof content === "string" ? content : JSON.stringify(content));
   return file;
 }

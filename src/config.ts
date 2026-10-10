@@ -9,6 +9,8 @@
  */
 import * as fs from "node:fs";
 
+import { SESSION_ID_PLACEHOLDER } from "./headers.ts";
+
 export const CONFIG_FILE_NAME = "session-affinity.json";
 
 /** The file is read on every request; a bound keeps a mistake (a log redirected here) from costing every request. */
@@ -47,7 +49,7 @@ const RESERVED_HEADER_PREFIXES = ["content-", "proxy-"];
 
 type Parsed<T> = { value: T } | { problem: string };
 
-const isObject = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
+export const isObject = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
 const providerProblem = (where: string, name: unknown) =>
   `${where}${JSON.stringify(name)} is not a provider name (letters, digits, ".", "_" and "-", starting with a letter or digit, as in models.json)`;
 
@@ -61,7 +63,7 @@ function templateProblem(where: string, template: unknown): string | undefined {
   if (template === "") return `${where} must not be empty`;
   if (!TEMPLATE_SHAPE.test(template)) return `${where} may contain only printable ASCII characters and spaces`;
   if (template.length > MAX_TEMPLATE_CHARS) return `${where} is longer than ${MAX_TEMPLATE_CHARS} characters`;
-  const unknown = (template.match(PLACEHOLDER_SHAPE) ?? []).find((placeholder) => placeholder !== "{sessionId}");
+  const unknown = (template.match(PLACEHOLDER_SHAPE) ?? []).find((placeholder) => placeholder !== SESSION_ID_PLACEHOLDER);
   if (unknown !== undefined) return `${where} uses ${JSON.stringify(unknown)}; the only placeholder is {sessionId}`;
   return undefined;
 }

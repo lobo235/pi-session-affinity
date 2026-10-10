@@ -27,6 +27,7 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 import type { ConfigReader } from "./config-reader.ts";
+import { isObject as isRecord } from "./config.ts";
 import { affinityProviderOf, applyAffinityHeaders, type HeaderBag } from "./headers.ts";
 
 const BOUNDARY_USER_TURN = { role: "user", content: "." } as const;
@@ -37,10 +38,6 @@ const BOUNDARY_USER_TURN = { role: "user", content: "." } as const;
  * on a busy engine can take 30-60 s.
  */
 export const DEFAULT_BOUNDARY_TIMEOUT_MS = 120_000;
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
 
 /** A system message with text (a string or content parts): the only lead a request head has. */
 function isSystemMessage(message: unknown): boolean {

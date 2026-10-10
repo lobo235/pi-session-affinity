@@ -8,6 +8,8 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import type { Readable, Writable } from "node:stream";
 
+import { CONFIG_FILE_NAME } from "../src/config.ts";
+
 export const REPO = path.join(import.meta.dirname, "..");
 export const PI_BIN = path.join(REPO, "node_modules", ".bin", "pi");
 const STEP_TIMEOUT_MS = 60_000;
@@ -25,7 +27,7 @@ export function writeAgentDir(root: string, port: number, config: unknown): stri
   const model = { id: FAKE_MODEL, name: FAKE_MODEL, contextWindow: 131072, maxTokens: 4096, input: ["text"], reasoning: false, compat: { sendSessionAffinityHeaders: true } };
   const models = { providers: { [FAKE_PROVIDER]: { baseUrl: `http://127.0.0.1:${port}/v1`, api: "openai-completions", apiKey: "unused", models: [model] } } };
   fs.writeFileSync(path.join(agentDir, "models.json"), JSON.stringify(models, null, 2));
-  fs.writeFileSync(path.join(agentDir, "session-affinity.json"), JSON.stringify(config, null, 2));
+  fs.writeFileSync(path.join(agentDir, CONFIG_FILE_NAME), JSON.stringify(config, null, 2));
   fs.writeFileSync(path.join(agentDir, "settings.json"), JSON.stringify({ compaction: { enabled: false, keepRecentTokens: 1 } }, null, 2));
   return agentDir;
 }
