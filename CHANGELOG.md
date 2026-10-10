@@ -25,4 +25,4 @@ The boundary request is experimental and may change in a minor version.
   installs the unpacked tarball with the vendored pi's `pi install` (so pi finds it through `pi.extensions` and
   only the files the package ships), and checks what reaches a fake model on loopback.
 - CI on Linux, macOS and Windows, a secret scan, a workflow security audit (zizmor), Dependabot updates and a package-contents check; a nightly run
-  against the newest pi; npm publishing by trusted publishing.
+  against the newest pi; npm publishing by trusted publishing, then a GitHub Release carrying the tag's changelog notes.
