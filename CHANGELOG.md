@@ -8,6 +8,15 @@ The boundary request is experimental and may change in a minor version.
 
 ## [Unreleased]
 
+## [v1.0.1] - 2026-10-10
+
+### Changed
+
+- Tested with pi 0.99.2, 1.0.0, 1.0.1, 1.0.2, 1.0.3, 1.0.4 and 1.1.0: the full suite and both smokes on each.
+  The suite's vendored pi moves from 1.0.4 to 1.1.0. No code changes.
+- Published from the release workflow through npm trusted publishing, so this version carries a provenance
+  attestation linking it to its source commit. v1.0.0 was published by hand and has none.
+
 ## [v1.0.0] - 2026-10-10
 
 ### Added
