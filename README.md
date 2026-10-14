@@ -197,7 +197,7 @@ once. It goes through pi's model registry, which does not fire pi's request even
 
 ## pi versions
 
-Tested with pi 0.99.2, 1.0.0, 1.0.1, 1.0.2, 1.0.3, 1.0.4 and 1.1.0: the full suite and both smokes on each. On pi
+Tested with pi 0.99.2, 1.0.0, 1.0.1, 1.0.2, 1.0.3, 1.0.4, 1.1.0 and 1.2.0: the full suite and both smokes on each. On pi
 0.87.1 to 0.99.1 both smokes pass, but the test suite uses pi APIs that arrived in 0.99.2. It uses only pi's public
 extension events (`session_start`, `session_compact`, `before_provider_headers`, `before_provider_request`) and the
 context's model registry, with no imports from pi's internals, so it does not check pi's version at run time. A
