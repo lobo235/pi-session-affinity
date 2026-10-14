@@ -8,6 +8,10 @@ The boundary request is experimental and may change in a minor version.
 
 ## [Unreleased]
 
+### Changed
+
+- Tested with pi 1.2.0, which the repository now vendors for its tests. No code changes.
+
 ## [v1.0.1] - 2026-10-10
 
 ### Changed
