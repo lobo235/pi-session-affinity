@@ -21,6 +21,7 @@ import * as path from "node:path";
 import { getAgentDir, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 import { registerBoundaryRequest } from "./boundary.ts";
+import { createWarner, piVersion, versionNotice } from "./pi-guard.ts";
 import { CONFIG_FILE_NAME } from "./config.ts";
 import { createConfigReader } from "./config-reader.ts";
 import { affinityProviderOf, applyAffinityHeaders } from "./headers.ts";
@@ -34,7 +35,8 @@ export interface SessionAffinityOptions {
   /** Where a notice goes when the session has no UI; default process.stderr. */
   writeStderr?: WriteStderr;
   /** How long the next request waits for a boundary request; default DEFAULT_BOUNDARY_TIMEOUT_MS. */
-  boundaryTimeoutMs?: number;
+  boundaryTimeoutMs?: number;  /** The running pi's version; read from the pi package when omitted, only for the unverified-pi warning. */
+  version?: string;
 }
 
 function readOrUndefined<T>(read: () => T): T | undefined {
@@ -49,8 +51,15 @@ export default function sessionAffinity(pi: ExtensionAPI, options: SessionAffini
   const writeStderr = options.writeStderr ?? writeProcessStderr;
   const configPath = options.configPath ?? (() => path.join(getAgentDir(), CONFIG_FILE_NAME));
   const readConfig = createConfigReader(configPath, writeStderr);
+  // One warner for the session: created per event it would say the same thing again on the next one.
+  let current: Parameters<Parameters<ExtensionAPI["on"]>[1]>[1] | undefined;
+  const warner = createWarner((message, level) => current?.ui?.notify?.(message, level));
 
   pi.on("session_start", (_event, ctx) => {
+    // A pi this package was not verified against is announced once, and everything below still runs.
+    current = ctx;
+    const notice = versionNotice(options.version ?? piVersion());
+    if (notice) warner.warn("pi-version", notice);
     const config = readConfig(ctx);
     const models = readOrUndefined(() => ctx.modelRegistry.getAll());
     if (config === undefined || models === undefined) return;

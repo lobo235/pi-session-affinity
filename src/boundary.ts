@@ -24,6 +24,7 @@
  *      head is exact by construction, and pi awaits both events, so the order is guaranteed).
  * pi's model registry does not run `before_provider_request`, so the boundary request cannot re-arm itself.
  */
+import { api, createWarner } from "./pi-guard.ts";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 import type { ConfigReader } from "./config-reader.ts";
@@ -87,8 +88,25 @@ export interface BoundaryOptions {
 
 type ProviderRequestContext = Parameters<Parameters<ExtensionAPI["on"]>[1]>[1];
 
+type Warner = { warn: (key: string, message: string) => void };
+
+/**
+ * pi's request-session id, or undefined when pi moved `getSessionId`. Only the affinity key on the boundary request's
+ * headers is lost -- the request itself still goes out -- and the missing internal is named once per session.
+ */
+function readSessionId(ctx: ProviderRequestContext, warner: Warner): string | undefined {
+  const manager = ctx.sessionManager as { getSessionId?: () => string } | undefined;
+  if (typeof manager?.getSessionId !== "function") return api<string | undefined>(warner, "ctx.sessionManager.getSessionId", undefined, undefined);
+  try {
+    return manager.getSessionId();
+  } catch {
+    return undefined;
+  }
+}
+
 /** Sends the boundary request for `payload` if one applies; resolves when it is answered, bounded or aborted. */
 async function sendBoundaryRequest(payload: unknown, ctx: ProviderRequestContext, options: BoundaryOptions): Promise<void> {
+  const warner = createWarner((message, level) => ctx.ui?.notify?.(message, level));
   const model = ctx.model;
   // A virtual (routing) model gets none: its next request may go to another provider (headers.ts, affinityProviderOf).
   const provider = affinityProviderOf(model);
@@ -98,12 +116,18 @@ async function sendBoundaryRequest(payload: unknown, ctx: ProviderRequestContext
   const boundary = buildBoundaryPayload(payload);
   // The head belongs to the model the request names; sending it with the session's model would cache nothing useful.
   if (boundary === undefined || boundary.model !== model.id) return;
-  const sessionId = ctx.sessionManager.getSessionId();
+  const sessionId = readSessionId(ctx, warner);
   const transformHeaders = (headers: HeaderBag) => {
     const next = { ...headers };
     applyAffinityHeaders(next, config, { provider, sessionId });
     return next;
   };
+  const registry = ctx.modelRegistry as { complete?: unknown } | undefined;
+  if (typeof registry?.complete !== "function") {
+    // The boundary request is an optimisation; without it the real request still goes out.
+    api(warner, "ctx.modelRegistry.complete", undefined as unknown, undefined);
+    return;
+  }
   await boundedCall(
     (signal) => ctx.modelRegistry.complete(model, { systemPrompt: "", messages: [] }, { maxTokens: 1, signal, sessionId, onPayload: () => boundary, transformHeaders }),
     options.timeoutMs ?? DEFAULT_BOUNDARY_TIMEOUT_MS,

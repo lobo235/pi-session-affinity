@@ -186,3 +186,23 @@ test("a configured provider that lists virtual models is called out when the ses
   assert.match(notices[0].text, /virtual/);
   assert.doesNotMatch(notices[0].text, /"example-gateway"/);
 });
+
+test("an unverified pi is announced once at session start, and the headers still go out", async (t) => {
+  const { pi, emit } = fakePi();
+  sessionAffinity(pi as any, { configPath: () => writeConfig(tempDir(t), GATEWAY_CONFIG), writeStderr: () => {}, version: "1.6.0" });
+  const { ctx, notices } = fakeCtx({ provider: "example-gateway" });
+  await emit("session_start", {}, ctx);
+  await emit("session_start", {}, ctx);
+  assert.equal(notices.filter((notice) => /has not been verified/.test(notice.text)).length, 1, JSON.stringify(notices));
+  const headers: Record<string, string | null> = {};
+  await emit("before_provider_headers", { headers }, ctx);
+  assert.deepEqual(headers, { "x-session-id": SESSION_ID }, "the affinity key survives the warning");
+});
+
+test("a verified pi says nothing", async (t) => {
+  const { pi, emit } = fakePi();
+  sessionAffinity(pi as any, { configPath: () => writeConfig(tempDir(t), GATEWAY_CONFIG), writeStderr: () => {}, version: "1.5.0" });
+  const { ctx, notices } = fakeCtx({ provider: "example-gateway" });
+  await emit("session_start", {}, ctx);
+  assert.equal(notices.filter((notice) => /has not been verified/.test(notice.text)).length, 0, JSON.stringify(notices));
+});
