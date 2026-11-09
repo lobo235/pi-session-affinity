@@ -8,6 +8,22 @@ The boundary request is experimental and may change in a minor version.
 
 ## [Unreleased]
 
+## [v1.1.0] - 2026-11-09
+
+### Added
+
+- A pi this package was not verified against now warns once per session, naming the pi and the verified release
+  lines (1.2 through 1.5), instead of behaving unpredictably later. Anything learned before a context existed to
+  notify through is queued and shown at session start.
+- The pi internals this package reads (`getSessionId`, `modelRegistry.complete`) are feature-detected
+  (`src/pi-guard.ts`): an internal pi moves or drops warns once, naming it, and that one feature degrades rather
+  than the package failing to load. The Affinity header contract and the Boundary request are untouched.
+
+### Changed
+
+- Tested with pi 1.5.0, which the repository now vendors for its tests: the full suite passes there, plus the load
+  smoke and a real-pi smoke. No behavioural change on verified release lines.
+
 ### Added
 
 - A pi this package was not verified against now warns once per session, naming the pi and the verified release lines
