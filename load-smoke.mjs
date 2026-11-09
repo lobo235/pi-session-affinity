@@ -85,7 +85,7 @@ function resolveFromPi(specifier) {
           const suffix = pattern.slice(star + 1);
           if (!sub.startsWith(prefix) || !sub.endsWith(suffix)) continue;
           const rest = sub.slice(prefix.length, sub.length - suffix.length);
-          const file = (typeof val === "string" ? val : val.import ?? val.default)?.replace("*", rest);
+          const file = (typeof val === "string" ? val : val.import ?? val.default)?.replaceAll("*", () => rest);   // all occurrences, and a function replacer so `$&`/`$` in a specifier is literal (CodeQL js/incomplete-sanitization)
           if (typeof file === "string") return path.join(pkgDir, file);
         }
       }
