@@ -8,6 +8,19 @@ The boundary request is experimental and may change in a minor version.
 
 ## [Unreleased]
 
+### Added
+
+- A pi this package was not verified against now warns once per session, naming the pi and the verified release lines
+  (1.2 through 1.5), and keeps working.
+- The two pi internals the boundary request needs are feature-detected: a `getSessionId` or `modelRegistry.complete`
+  that moved warns once, naming it, and costs only the boundary request's affinity key or the boundary request
+  itself -- the real request still goes out.
+
+### Changed
+
+- The vendored `@earendil-works/pi-coding-agent` moves from 1.2.0 to 1.5.0, verified by the full suite (166 tests),
+  the load smoke and the pi smoke.
+
 ## [v1.0.2] - 2026-10-13
 
 ### Changed
